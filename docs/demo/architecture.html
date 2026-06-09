@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Voice Agent for ISP Outage Ticket Resolution — Architecture</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/v4-shims.min.css">
+<style>
+  :root{
+    --bg:#0c1018; --card:#141a26; --border:#232c3d;
+    --text:#e7ecf5; --muted:#8a97ad; --accent:#f0a83c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:44px 20px 60px;
+  }
+  .wrap{max-width:1320px;margin:0 auto}
+  h1{color:var(--accent);font-size:clamp(22px,3.2vw,34px);font-weight:800;text-align:center;margin:0 0 6px;letter-spacing:-.01em;line-height:1.15}
+  .sub{color:var(--muted);text-align:center;margin:0 0 30px;font-size:15px}
+
+  /* light diagram card, like the reference picture */
+  .diagram{background:#ffffff;border:1px solid #d7deea;border-radius:16px;padding:28px;overflow-x:auto;box-shadow:0 22px 55px -22px #000a}
+  .mermaid{display:flex;justify-content:center;min-width:860px}
+  /* big icon stacked above each label */
+  .mermaid .nodeLabel{text-align:center;line-height:1.5}
+  .mermaid .nodeLabel i{font-size:2.6em;color:#28324a;vertical-align:middle;transition:color .15s ease}
+  .mermaid .nodeLabel i.fab{color:#1f2937}
+  .mermaid .edgeLabel{font-weight:500}
+  /* interactive nodes: hover highlights icon + border, click shows a popover */
+  .mermaid g.node{cursor:pointer}
+  .mermaid g.node:hover .nodeLabel i{color:var(--accent)}
+  .mermaid g.node:hover rect,.mermaid g.node:hover path,.mermaid g.node:hover polygon{stroke:var(--accent);stroke-width:2.4px;transition:stroke .15s ease}
+  .pop{position:fixed;z-index:60;display:none;max-width:270px;background:var(--card);border:1px solid var(--accent);border-radius:11px;padding:12px 15px;box-shadow:0 16px 38px -10px #000;color:var(--text);font-size:13px;line-height:1.5;pointer-events:none}
+  .pop .pt{color:var(--accent);font-weight:800;margin-bottom:4px;font-size:13.5px}
+  /* walkthrough controls + animation */
+  .controls{display:flex;align-items:center;gap:16px;margin:0 0 16px;flex-wrap:wrap}
+  .play-btn{background:var(--accent);color:#1a1205;border:none;border-radius:9px;padding:10px 20px;font-weight:700;font-size:15px;cursor:pointer}
+  .play-btn:hover{filter:brightness(1.06)}
+  .caption{color:var(--text);font-size:15px;line-height:1.4}
+  .caption b{color:var(--accent)}
+  .mermaid path.lit{stroke:#f0a83c !important;stroke-width:4px !important;stroke-dasharray:9 7;animation:flow .6s linear infinite;filter:drop-shadow(0 0 3px #f0a83c)}
+  @keyframes flow{ to{ stroke-dashoffset:-32 } }
+  .mermaid g.litnode rect,.mermaid g.litnode path,.mermaid g.litnode polygon{stroke:#f0a83c !important;stroke-width:3px !important}
+  .mermaid g.litnode .nodeLabel i{color:#f0a83c !important}
+  .mermaid g.litnode{animation:pnode .8s ease-in-out infinite alternate}
+  @keyframes pnode{ to{ filter:drop-shadow(0 0 7px #f0a83c99) } }
+  .mermaid circle.packet{fill:#f0a83c;stroke:#ffffff;stroke-width:1.5px;filter:drop-shadow(0 0 6px #f0a83c)}
+
+  .legend{margin-top:28px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 30px}
+  .legend h2{font-size:14px;margin:0 0 18px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  .legend ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:13px 36px}
+  .legend li{display:flex;gap:14px;align-items:flex-start;font-size:15px;line-height:1.5}
+  .legend .n{color:var(--accent);font-weight:800;min-width:22px;font-variant-numeric:tabular-nums}
+  @media(max-width:760px){ .legend ol{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>AI Voice Agent for ISP Outage Ticket Resolution</h1>
+    <p class="sub">Vivant Downtime Check — system architecture</p>
+
+    <div class="controls">
+      <button id="playBtn" class="play-btn">▶ Play walkthrough</button>
+      <span id="caption" class="caption"></span>
+    </div>
+
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+  subgraph EXT[External systems]
+    UT[fa:fa-ticket&lt;br/&gt;Utiliko]
+    VAPI[fa:fa-phone-volume&lt;br/&gt;Vapi]
+    ISP[fa:fa-phone&lt;br/&gt;ISP Phone]
+    HUMAN[fa:fa-user&lt;br/&gt;Human agent]
+  end
+  subgraph GCP[Google Cloud]
+    SCH[fa:fa-clock&lt;br/&gt;Scheduler]
+    SM[fa:fa-lock&lt;br/&gt;Secrets]
+    RUN[fa:fa-server&lt;br/&gt;Cloud Run]
+    TASKS[fa:fa-list-check&lt;br/&gt;Cloud Tasks]
+    GF[fa:fa-bolt&lt;br/&gt;Gemini Flash]
+    GP[fa:fa-brain&lt;br/&gt;Gemini Pro]
+    SQL[(fa:fa-database&lt;br/&gt;Cloud SQL)]
+    OBS[fa:fa-wave-square&lt;br/&gt;Logging]
+  end
+  subgraph CICD[CI/CD]
+    GH[fab:fa-github&lt;br/&gt;GitHub] -->|push| CB[fa:fa-hammer&lt;br/&gt;Cloud Build] -->|build| AR[fa:fa-cube&lt;br/&gt;Artifacts]
+  end
+  UT -->|1- new ticket webhook| RUN
+  SCH -->|1- check for new tickets, poll as backup| RUN
+  UT -->|2- read ticket and post first update| RUN
+  RUN -->|3- queue the job| TASKS
+  TASKS -->|4- start call| VAPI
+  VAPI -->|5- call the ISP| ISP
+  VAPI <-->|6- in-call conversation| GF
+  VAPI -->|7- call result webhook| RUN
+  RUN <-->|8- extract the report| GP
+  RUN -->|9- post the report| UT
+  RUN -->|10- escalate if no answer or needs review| HUMAN
+  RUN <-->|keys| SM
+  RUN <-->|store| SQL
+  RUN -->|logs / alerts| OBS
+  AR -->|deploy| RUN
+
+  click UT showInfo
+  click VAPI showInfo
+  click ISP showInfo
+  click HUMAN showInfo
+  click SCH showInfo
+  click SM showInfo
+  click RUN showInfo
+  click TASKS showInfo
+  click GF showInfo
+  click GP showInfo
+  click SQL showInfo
+  click OBS showInfo
+  click GH showInfo
+  click CB showInfo
+  click AR showInfo
+
+  style EXT fill:#eef1f6,stroke:#c2cad6,color:#1f2937
+  style GCP fill:#dceafb,stroke:#9cc0f0,color:#1f2937
+  style CICD fill:#efe1f8,stroke:#cba8e8,color:#1f2937
+      </pre>
+    </div>
+
+    <div class="legend">
+      <h2>How the flow works</h2>
+      <ol>
+        <li><span class="n">1</span><span>A new outage ticket triggers the agent (webhook, with a scheduled check as backup).</span></li>
+        <li><span class="n">2</span><span>Read the ticket and post a first update.</span></li>
+        <li><span class="n">3</span><span>Queue the job for pacing and retries.</span></li>
+        <li><span class="n">4</span><span>Start the call.</span></li>
+        <li><span class="n">5</span><span>Vapi calls the ISP.</span></li>
+        <li><span class="n">6</span><span>Gemini Flash handles the live conversation.</span></li>
+        <li><span class="n">7</span><span>The call result comes back to the agent.</span></li>
+        <li><span class="n">8</span><span>Gemini Pro extracts the report.</span></li>
+        <li><span class="n">9</span><span>Post the report back on the ticket.</span></li>
+        <li><span class="n">10</span><span>Escalate to a human if no answer or unclear.</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <div id="pop" class="pop"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    /* short, plain-words explanation for each box (shown on click) */
+    const NAMES = { UT:'Utiliko', VAPI:'Vapi', ISP:'ISP Phone', HUMAN:'Human agent', SCH:'Scheduler', SM:'Secrets', RUN:'Cloud Run', TASKS:'Cloud Tasks', GF:'Gemini Flash', GP:'Gemini Pro', SQL:'Cloud SQL', OBS:'Logging', GH:'GitHub', CB:'Cloud Build', AR:'Artifacts' };
+    const EXPLAIN = {
+      UT:'The ticketing system. Outages come in, and the finished report goes back here.',
+      VAPI:'The voice platform that places and runs the actual phone call.',
+      ISP:"The provider's line, whatever it is: a human, an IVR menu, or a bot.",
+      HUMAN:"A person who takes over if the agent can't finish or the call is unclear.",
+      SCH:'Periodically checks for new tickets, as a backup to the webhook.',
+      SM:'Stores API keys and credentials securely.',
+      RUN:'The agent itself. It orchestrates the whole flow end to end.',
+      TASKS:'Queues each call so they run paced, with retries.',
+      GF:'A fast model that handles the live, back-and-forth conversation.',
+      GP:'An accurate model that reads the call and writes the report.',
+      SQL:'The database for tickets, calls, and reports.',
+      OBS:'Logs, metrics, and alerts for every run.',
+      GH:'The source code. A push kicks off a build and deploy.',
+      CB:'Builds the container image on each push.',
+      AR:'Stores the built image, which is then deployed to Cloud Run.'
+    };
+    let lastXY = { x: window.innerWidth/2, y: 200 };
+    window.addEventListener('mousemove', e => { lastXY = { x:e.clientX, y:e.clientY }; });
+    window.showInfo = function(id){
+      const pop = document.getElementById('pop');
+      const info = EXPLAIN[id];
+      if(!info){ pop.style.display='none'; return; }
+      pop.innerHTML = '<div class="pt">'+(NAMES[id]||id)+'</div>'+info;
+      pop.style.display='block';
+      const r = pop.getBoundingClientRect();
+      let x = lastXY.x + 16, y = lastXY.y + 16;
+      if(x + r.width  > window.innerWidth  - 12) x = lastXY.x - r.width  - 16;
+      if(y + r.height > window.innerHeight - 12) y = lastXY.y - r.height - 16;
+      pop.style.left = Math.max(10,x)+'px';
+      pop.style.top  = Math.max(10,y)+'px';
+    };
+    window.addEventListener('click', e => {
+      if(!e.target.closest('.node')) { const p=document.getElementById('pop'); if(p) p.style.display='none'; }
+    });
+
+    /* step-by-step animated walkthrough (1 -> 10) */
+    function setupWalkthrough(){
+      var svg = document.querySelector('.mermaid svg');
+      var playBtn = document.getElementById('playBtn');
+      var caption = document.getElementById('caption');
+      if(!svg || !playBtn) return;
+      var nameToId = {}; Object.keys(NAMES).forEach(function(k){ nameToId[NAMES[k]] = k; });
+      var nodeEls = {};
+      svg.querySelectorAll('g.node').forEach(function(g){
+        var lbl = g.querySelector('.nodeLabel'); var txt = (lbl ? lbl.textContent : '').trim();
+        if(nameToId[txt]) nodeEls[nameToId[txt]] = g;
+      });
+      function findEdges(a,b){
+        var out=[];
+        svg.querySelectorAll('path').forEach(function(p){
+          var id=p.id||''; var cls=p.classList;
+          if(new RegExp('^L[-_]'+a+'[-_]'+b+'[-_]').test(id) || (cls.contains('LS-'+a)&&cls.contains('LE-'+b))) out.push(p);
+        });
+        return out;
+      }
+      var STEPS=[
+        {n:'1', t:'A new outage ticket triggers the agent (webhook, with a scheduled check as backup).', e:[['UT','RUN'],['SCH','RUN']], nd:['UT','SCH','RUN']},
+        {n:'2', t:'Read the ticket and post a first update.', e:[['UT','RUN']], nd:['UT','RUN']},
+        {n:'3', t:'Queue the job for pacing and retries.', e:[['RUN','TASKS']], nd:['RUN','TASKS']},
+        {n:'4', t:'Start the call.', e:[['TASKS','VAPI']], nd:['TASKS','VAPI']},
+        {n:'5', t:'Vapi calls the ISP.', e:[['VAPI','ISP']], nd:['VAPI','ISP']},
+        {n:'6', t:'Gemini Flash handles the live conversation.', e:[['VAPI','GF']], nd:['VAPI','GF']},
+        {n:'7', t:'The call result comes back to the agent.', e:[['VAPI','RUN']], nd:['VAPI','RUN']},
+        {n:'8', t:'Gemini Pro extracts the report.', e:[['RUN','GP']], nd:['RUN','GP']},
+        {n:'9', t:'Post the report back on the ticket.', e:[['RUN','UT']], nd:['RUN','UT']},
+        {n:'10', t:'Escalate to a human if no answer or unclear.', e:[['RUN','HUMAN']], nd:['RUN','HUMAN']}
+      ];
+      var packets=[], pid=0, SVGNS='http://www.w3.org/2000/svg', XLINK='http://www.w3.org/1999/xlink';
+      function clearPackets(){
+        packets.forEach(function(c){ if(c && c.parentNode) c.parentNode.removeChild(c); });
+        packets=[];
+      }
+      function spawnPacket(path){
+        try{
+          if(!path.id){ path.id = 'edge-pk-'+(pid++); }
+          var c=document.createElementNS(SVGNS,'circle');
+          c.setAttribute('r','9'); c.setAttribute('cx','0'); c.setAttribute('cy','0'); c.setAttribute('class','packet');
+          var am=document.createElementNS(SVGNS,'animateMotion');
+          am.setAttribute('dur','1.1s'); am.setAttribute('repeatCount','indefinite');
+          var mp=document.createElementNS(SVGNS,'mpath');
+          mp.setAttributeNS(XLINK,'href','#'+path.id);
+          mp.setAttribute('href','#'+path.id);
+          am.appendChild(mp); c.appendChild(am);
+          path.parentNode.appendChild(c);
+          packets.push(c);
+        }catch(e){}
+      }
+      function clearHi(){
+        svg.querySelectorAll('.lit').forEach(function(x){x.classList.remove('lit');});
+        svg.querySelectorAll('.litnode').forEach(function(x){x.classList.remove('litnode');});
+        clearPackets();
+      }
+      function light(i){
+        clearHi();
+        var s=STEPS[i];
+        s.e.forEach(function(pr){ findEdges(pr[0],pr[1]).forEach(function(p){ p.classList.add('lit'); spawnPacket(p); }); });
+        s.nd.forEach(function(id){ if(nodeEls[id]) nodeEls[id].classList.add('litnode'); });
+        caption.innerHTML='<b>Step '+s.n+'</b> &mdash; '+s.t;
+      }
+      var timer=null, idx=0;
+      function stop(){ if(timer){clearInterval(timer);timer=null;} playBtn.textContent='▶ Play walkthrough'; }
+      function play(){
+        stop(); idx=0; light(0);
+        timer=setInterval(function(){
+          idx++;
+          if(idx>=STEPS.length){ stop(); return; }
+          light(idx);
+        }, 1600);
+        playBtn.textContent='⏸ Stop';
+      }
+      playBtn.onclick=function(){ if(timer){ stop(); clearHi(); caption.textContent=''; } else { play(); } };
+    }
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      securityLevel: 'loose',
+      themeVariables: {
+        fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+        fontSize: '18px',
+        background: '#ffffff',
+        primaryColor: '#ffffff',
+        primaryTextColor: '#1f2937',
+        primaryBorderColor: '#9aa6bd',
+        secondaryColor: '#ffffff',
+        secondaryTextColor: '#1f2937',
+        secondaryBorderColor: '#9aa6bd',
+        tertiaryColor: '#f6f8fc',
+        tertiaryTextColor: '#1f2937',
+        tertiaryBorderColor: '#cbd5e1',
+        lineColor: '#46566f',
+        textColor: '#1f2937',
+        nodeBorder: '#9aa6bd',
+        clusterBkg: '#f1f5f9',
+        clusterBorder: '#cbd5e1',
+        titleColor: '#1f2937',
+        edgeLabelBackground: '#ffffff',
+        nodeTextColor: '#1f2937'
+      },
+      flowchart: {
+        nodeSpacing: 42,
+        rankSpacing: 82,
+        padding: 14,
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+    mermaid.run({ querySelector: '.mermaid' }).then(setupWalkthrough).catch(function(e){ console.error(e); });
+  </script>
+</body>
+</html>

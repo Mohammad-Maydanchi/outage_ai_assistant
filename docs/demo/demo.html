@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vivant Downtime Check, Demo</title>
+<style>
+  :root{
+    --bg:#0c1018; --card:#141a26; --card2:#1a2230; --border:#232c3d;
+    --text:#e7ecf5; --muted:#8a97ad; --accent:#f0a83c;
+    --good:#6fd49b; --bad:#e06363; --blue:#9db4e0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1100px 640px at 50% -8%, #18263c 0%, #0c1018 58%);
+    background-color:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden;
+  }
+  .deck{position:fixed;inset:0;
+    background-image:radial-gradient(circle at 1px 1px, #ffffff09 1px, transparent 0);
+    background-size:44px 44px;}
+  .deck::after{content:"";position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 40%, transparent 55%, #06080d 100%);}
+  .slide{
+    position:absolute;inset:0;display:none;
+    flex-direction:column;justify-content:center;
+    padding:6vh 9vw 9vh; opacity:0; transition:opacity .35s ease;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none}}
+  .slide.active{display:flex;opacity:1;animation:rise .45s cubic-bezier(.2,.7,.2,1)}
+  .slide.center{align-items:center;text-align:center}
+  .kicker{
+    color:var(--accent);text-transform:uppercase;letter-spacing:.18em;
+    font-size:clamp(11px,1.1vw,15px);font-weight:700;margin-bottom:14px;
+  }
+  h1{font-size:clamp(34px,5vw,68px);line-height:1.06;font-weight:800;letter-spacing:-.01em}
+  h2.t{font-size:clamp(26px,3.6vw,46px);line-height:1.12;font-weight:800;margin-bottom:24px}
+  .lead{font-size:clamp(17px,1.9vw,26px);color:var(--muted);max-width:62ch;margin-top:18px;line-height:1.5}
+  .center .lead{margin-left:auto;margin-right:auto}
+  ul.points{list-style:none;margin-top:10px;max-width:66ch}
+  ul.points li{font-size:clamp(16px,1.7vw,23px);line-height:1.5;margin:14px 0;padding-left:30px;position:relative}
+  ul.points li::before{content:"";position:absolute;left:0;top:.62em;width:11px;height:11px;border-radius:3px;background:var(--accent)}
+  ul.points li b{color:var(--text)}
+  .accent{color:var(--accent)}
+  .muted{color:var(--muted)}
+  .big-quote{font-size:clamp(22px,3vw,40px);font-weight:700;line-height:1.25;max-width:26ch}
+
+  /* ---- title ---- */
+  .brandbar{display:flex;align-items:center;gap:14px;margin-bottom:34px;justify-content:center}
+  .logo{width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#c9821f);
+        display:flex;align-items:center;justify-content:center;font-weight:900;color:#1a1205;font-size:26px}
+  .brandname{font-weight:700;font-size:19px;letter-spacing:.04em;text-align:left}
+  .subtle{color:var(--muted);font-size:14px;text-align:left}
+  .chips{display:flex;gap:14px;margin-top:40px;justify-content:center;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:11px 22px;font-size:clamp(13px,1.4vw,17px);color:var(--text);transition:transform .2s ease,border-color .2s ease}
+  .chip b{color:var(--accent);font-weight:700}
+  .chip:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .logo-lg{width:66px;height:66px;font-size:33px;border-radius:16px;margin:0 auto 24px}
+  .tagline{color:var(--muted);font-size:clamp(16px,1.9vw,24px);margin-top:14px}
+  .agenda{display:flex;flex-direction:column;gap:4px;margin:38px auto 0;text-align:left;width:max-content;max-width:92vw}
+  .ag{display:flex;align-items:center;gap:15px;padding:9px 16px;border-radius:10px;color:var(--text);text-decoration:none;font-size:clamp(16px,1.7vw,22px);font-weight:600;cursor:pointer;border:1px solid transparent;transition:background .2s ease,color .2s ease,transform .2s ease,border-color .2s ease}
+  .ag .dot{width:9px;height:9px;border-radius:3px;background:var(--accent);flex:none}
+  .ag:hover{background:var(--card);border-color:var(--border);color:var(--accent);transform:translateX(5px)}
+  .ag:hover .dot{box-shadow:0 0 10px var(--accent)}
+  .ag-sub{display:flex;flex-direction:column;margin:2px 0 6px 34px;border-left:1px solid var(--border)}
+  .ag.sub{font-size:clamp(14px,1.4vw,18px);font-weight:500;color:var(--muted);padding:7px 16px}
+  .ag.sub .dot{width:6px;height:6px;background:var(--muted)}
+  .ag.sub:hover{color:var(--accent);background:var(--card)}
+  .ag.sub:hover .dot{background:var(--accent);box-shadow:none}
+
+  /* ---- ROI ---- */
+  .roi-row{display:flex;gap:22px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+  .roi-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px 32px;min-width:230px;transition:transform .2s ease,border-color .2s ease}
+  .roi-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+  .roi-card.hot{border-color:var(--accent);box-shadow:0 0 50px -20px var(--accent)}
+  .roi-num{font-size:clamp(40px,6vw,82px);font-weight:800;line-height:1;background:linear-gradient(135deg,#ffe1a3,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .roi-lbl{margin-top:12px;font-size:clamp(15px,1.6vw,20px);font-weight:600;line-height:1.4}
+  .roi-lbl span{display:block;color:var(--muted);font-weight:400;font-size:.82em;margin-top:5px}
+  .roi-foot{margin-top:20px;color:var(--muted);font-size:clamp(14px,1.5vw,18px)}
+
+  /* ---- problem ---- */
+  .prob-grid{display:flex;gap:52px;align-items:center;margin-top:22px;width:100%}
+  .prob-copy{flex:1.05}
+  .lead2{font-size:clamp(17px,1.9vw,24px);color:var(--muted);line-height:1.5;margin-bottom:24px;max-width:36ch}
+  .painlist{list-style:none;display:flex;flex-direction:column;gap:18px}
+  .painlist li{display:flex;gap:16px;align-items:flex-start;font-size:clamp(15px,1.55vw,20px);line-height:1.4}
+  .painlist .ic{width:32px;height:32px;flex:none;color:var(--accent);margin-top:1px}
+  .painlist b{color:var(--text)}
+  .painlist span{color:var(--muted)}
+  .prob-art{flex:1;position:relative;display:flex;justify-content:center;align-items:center;min-width:0}
+  .art-svg{width:100%;max-width:430px;height:auto;filter:drop-shadow(0 20px 50px #0008)}
+  .float-chip{position:absolute;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:8px 14px;font-size:clamp(11px,1.2vw,14px);color:var(--muted);box-shadow:0 8px 24px -12px #000;white-space:nowrap}
+  .float-chip b{color:var(--accent)}
+  .float-chip.c1{top:4%;left:-4%}
+  .float-chip.c2{bottom:8%;right:-3%}
+
+  /* ---- solution flow picture ---- */
+  .sol-grid{display:flex;gap:50px;align-items:center;margin-top:10px;width:100%}
+  .sol-grid .points{flex:1.1;margin-top:0}
+  .sol-flow{flex:1;display:flex;flex-direction:row;align-items:stretch;justify-content:center;gap:6px}
+  .flow-node{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 8px;transition:transform .2s ease,border-color .2s ease}
+  .flow-node:hover{transform:translateY(-4px);border-color:var(--accent)}
+  .flow-node.hot{border-color:var(--accent);box-shadow:0 0 44px -20px var(--accent)}
+  .fn-ic{width:38px;height:38px;flex:none;border-radius:11px;background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+  .fn-ic svg{width:20px;height:20px}
+  .fn-txt b{display:block;font-size:clamp(12px,1.15vw,14px);line-height:1.25}
+  .flow-arrow{align-self:center;color:var(--accent);font-size:15px;line-height:1}
+
+  /* ---- loop ---- */
+  .steps{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;align-items:stretch}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;flex:1;min-width:150px;display:flex;flex-direction:column;transition:transform .2s ease,border-color .2s ease}
+  .step:hover{transform:translateY(-4px);border-color:var(--accent)}
+  .step .n{color:var(--accent);font-weight:800;font-size:13px;letter-spacing:.1em}
+  .step .h{font-weight:700;margin:8px 0 4px;font-size:clamp(15px,1.5vw,19px)}
+  .step .d{color:var(--muted);font-size:clamp(12px,1.2vw,14px);line-height:1.4}
+  .platnote{margin-top:24px;color:var(--muted);font-size:15px;border-left:3px solid var(--border);padding-left:14px}
+  .step .tech{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:16px}
+  .tt{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;border:1px solid var(--border)}
+  .tt.fe{background:#243049;color:var(--blue)}
+  .tt.be{background:#3a2f17;color:var(--accent)}
+  .tt.vo{background:#3a1730;color:#e08acb}
+  .tt.ai{background:#173326;color:var(--good)}
+  .tt.sp{background:#13383e;color:#5fd1d6}
+  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;margin-top:26px;color:var(--muted);font-size:14px}
+  .legend span{display:flex;align-items:center;gap:8px}
+  .sw{width:12px;height:12px;border-radius:4px;display:inline-block}
+  .sw.fe{background:var(--blue)} .sw.be{background:var(--accent)} .sw.vo{background:#e08acb} .sw.ai{background:var(--good)} .sw.sp{background:#5fd1d6}
+  .lg-note{color:#586377;font-size:13px;border-left:2px solid var(--border);padding-left:12px}
+  .group{flex:2;min-width:300px;display:flex;flex-direction:column;position:relative;border:2px dotted var(--accent);border-radius:16px;padding:18px 14px 14px;background:#f0a83c0d}
+  .group-label{position:absolute;top:-10px;left:18px;background:var(--bg);padding:0 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+  .group-row{display:flex;gap:14px;flex:1;align-items:stretch}
+  .group-row .step{flex:1}
+  .arrow-h{flex:0 0 auto;align-self:center;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:16px;font-weight:700;line-height:1}
+  .arrow-h.sm{font-size:13px}
+
+  /* ---- video ---- */
+  .stage{display:flex;gap:30px;align-items:flex-start;margin-top:18px}
+  .videobox{flex:1.5;border:1px solid var(--border);border-radius:14px;background:#000;overflow:hidden;position:relative;aspect-ratio:16/10}
+  .videobox video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+  .vid-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:repeating-linear-gradient(45deg,#10151f,#10151f 14px,#121826 14px,#121826 28px)}
+  .vid-placeholder .ic{font-size:46px;margin-bottom:12px}
+  .vid-placeholder h3{font-size:20px;margin-bottom:10px}
+  .vid-placeholder code{background:#000;color:var(--accent);padding:2px 8px;border-radius:6px;font-size:13px}
+  .vid-placeholder p{color:var(--muted);font-size:14px;line-height:1.6;max-width:46ch}
+  .stage .side{flex:1}
+  .stage .side ol{margin-left:18px;line-height:1.7;font-size:clamp(14px,1.4vw,18px)}
+  .stage .side ol li{margin:8px 0}
+  .stage .side .pill{display:inline-block;background:var(--card2);border:1px solid var(--border);color:var(--blue);padding:3px 10px;border-radius:999px;font-size:12px;margin-bottom:14px}
+
+  /* ---- triage form mockup (matches the app) ---- */
+  .formcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 26px;max-width:68vw;margin-top:0}
+  .formhead{color:#fff;font-weight:700;font-size:16px;margin-bottom:13px;border-left:4px solid var(--accent);padding-left:10px}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 26px}
+  .field label{display:block;color:var(--muted);font-size:10px;letter-spacing:.02em;margin-bottom:3px}
+  .field.full{grid-column:1 / -1}
+  .field .inp{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:clamp(11px,1.15vw,13px);color:var(--text)}
+  .field .inp.ph{color:#586377}
+  .inp-wrap{position:relative}
+  .inp-wrap .inp{padding-right:52px}
+  .inp-btn{position:absolute;top:50%;transform:translateY(-50%);right:6px;background:#2a3650;color:#cfd8e8;border:none;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:600}
+  .fcheck{display:flex;align-items:center;gap:9px;margin-top:11px;color:var(--muted);font-size:12px}
+  .fcheck .box{width:13px;height:13px;border:1px solid var(--muted);border-radius:3px;flex:none}
+  .save-btn{display:block;width:100%;text-align:center;background:var(--accent);color:#1a1205;border:none;border-radius:9px;padding:10px;font-weight:700;font-size:14px;margin-top:13px}
+  .savedtitle{font-weight:700;font-size:17px;margin:16px 0 9px}
+  .savedtable{max-width:68vw;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .streq{display:grid;grid-template-columns:1.3fr 1fr .7fr .9fr .9fr auto;gap:14px;align-items:center;padding:10px 16px}
+  .sthead{background:var(--card2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .stbody{font-size:13px}
+  .stbadge{background:#243049;color:#9db4e0;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;justify-self:start}
+  .stacts{display:flex;gap:8px}
+  .stbtn{font-size:11px;font-weight:700;padding:5px 11px;border-radius:7px;border:1px solid var(--accent);color:var(--accent);background:transparent;white-space:nowrap}
+  .stbtn.solid{background:var(--accent);color:#1a1205}
+  .stmore{padding:9px 16px;color:var(--accent);font-size:12px;font-weight:600}
+
+  /* ---- scenario intro ---- */
+  .five{list-style:none;margin-top:8px;max-width:70ch}
+  .five li{display:flex;gap:16px;align-items:baseline;margin:13px 0;font-size:clamp(16px,1.7vw,23px)}
+  .five li .num{color:var(--accent);font-weight:800;font-variant-numeric:tabular-nums;min-width:26px}
+  .five li .lbl b{color:var(--text)}
+  .five li .lbl span{color:var(--muted)}
+  .proofline{margin-top:24px;display:inline-block;background:#173326;color:var(--good);font-weight:700;padding:8px 16px;border-radius:999px;font-size:15px}
+
+  /* ---- scenario slides ---- */
+  .scn-stage{display:flex;gap:28px;margin-top:14px;flex:1;min-height:0}
+  .scn-left{flex:1;display:flex;flex-direction:column}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 11px;border-radius:999px;margin-bottom:12px;align-self:flex-start}
+  .tag.human{background:#173326;color:var(--good)}
+  .tag.ivr{background:#3a2f17;color:var(--accent)}
+  .tag.ivrh{background:#3a1f17;color:#e8a06a}
+  .tag.bot{background:#243049;color:var(--blue)}
+  .tag.hard{background:#3a1730;color:#e08acb}
+  .scn-h{font-size:clamp(24px,3vw,40px);font-weight:800;line-height:1.1;margin-bottom:8px}
+  .scn-d{color:var(--muted);font-size:clamp(15px,1.6vw,21px);line-height:1.45;max-width:34ch}
+  .scn-audio{width:100%;margin-top:20px;filter:saturate(.9)}
+  .listen{margin-top:18px;color:var(--muted);font-size:14px;line-height:1.5;border-left:3px solid var(--accent);padding-left:14px;max-width:38ch}
+  .listen b{color:var(--text)}
+  .scn-result{margin-top:auto;padding-top:18px;font-size:clamp(14px,1.5vw,18px)}
+  .scn-result b{color:var(--good)}
+  .scn-result.none b{color:var(--muted);font-style:italic}
+  .scn-transcript{flex:1.2;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px;overflow-y:auto;max-height:66vh}
+  .scn-transcript .line{font-size:clamp(13px,1.3vw,16px);line-height:1.5;margin:7px 0;opacity:.5;transition:opacity .25s,background .25s;padding:4px 8px;border-radius:7px}
+  .scn-transcript .line.active{opacity:1;background:#22120033;border-left:3px solid var(--accent)}
+  .scn-transcript .who{font-weight:700;margin-right:7px}
+  .scn-transcript .who.ai{color:var(--accent)}
+  .scn-transcript .who.sys{color:var(--blue)}
+  .chapters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px}
+  .chlabel{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+  .chapter{background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:border-color .2s ease,color .2s ease}
+  .chapter:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---- report ---- */
+  .report{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 30px;max-width:62vw;margin-top:8px}
+  .report .rhead{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+  .report .rhead h3{font-size:22px}
+  .outcome{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;background:#173326;color:var(--good)}
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 34px;margin-bottom:18px}
+  .rgrid dt{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+  .rgrid dd{font-size:clamp(15px,1.5vw,19px);font-weight:600}
+  .rgrid dd.np{color:var(--muted);font-weight:500;font-style:italic}
+  .summary{background:var(--card2);border-radius:10px;padding:14px 16px;color:#cfd8e8;line-height:1.55;font-size:15px}
+  .stamp{color:#586377;font-size:13px;margin-top:14px}
+
+  /* ---- golden rule ---- */
+  .rule-grid{display:flex;gap:24px;margin-top:20px;flex-wrap:wrap}
+  .rule{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;flex:1;min-width:220px;transition:transform .2s ease,border-color .2s ease}
+  .rule:hover{transform:translateY(-4px);border-color:var(--accent)}
+  .rule .ic{font-size:28px;margin-bottom:10px}
+  .rule h4{font-size:17px;margin-bottom:6px}
+  .rule p{color:var(--muted);font-size:14px;line-height:1.5}
+  .np-chip{font-family:ui-monospace,monospace;background:#1b2436;color:var(--accent);padding:2px 8px;border-radius:6px;font-size:.92em}
+
+  /* ---- closing ---- */
+  .close-line{margin-top:28px;background:linear-gradient(135deg,#2a2007,#191205);border:1px solid var(--accent);border-radius:14px;padding:22px 26px;max-width:62ch}
+  .close-line .lbl{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:12px}
+  .close-line .txt{font-size:clamp(18px,2vw,27px);font-weight:700;margin-top:8px;line-height:1.3}
+  .editflag{display:inline-block;background:#3a1f17;color:#e8a06a;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;letter-spacing:.05em;vertical-align:middle;margin-left:8px}
+  .flow3{display:flex;align-items:center;gap:10px;margin-top:24px;flex-wrap:nowrap}
+  .f3-node{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-weight:700;font-size:clamp(12px,1.25vw,15px);white-space:nowrap}
+  .f3-node.hot{border-color:var(--accent);color:var(--accent)}
+  .f3-arrow{color:var(--accent);font-size:14px;font-weight:700;flex:none}
+  .f3-paths{display:flex;flex-direction:column;gap:9px}
+  .f3-path{background:var(--card2);border:1px dashed #44506a;border-radius:10px;padding:9px 15px;font-size:clamp(12px,1.25vw,15px)}
+  .f3-tag{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding-right:6px;min-width:62px}
+  .f3-tag.done{color:var(--muted)}
+  .f3-judge{clip-path:polygon(10% 0,90% 0,100% 50%,90% 100%,10% 100%,0 50%);background:#3a2f17;color:var(--accent);padding:11px 28px;text-align:center;font-weight:700;font-size:clamp(11px,1.15vw,14px);line-height:1.2;white-space:nowrap;flex:none}
+  .f3-judge small{display:block;color:#c79a4d;font-size:.78em;font-weight:500;margin-top:2px}
+  .f3-path.pass{border:1px dashed var(--good);color:var(--good)}
+  .f3-path.fail{border:1px dashed #e08a6a;color:#e8a06a}
+  .phase2{position:relative;padding-bottom:54px}
+  .f3-arrow.ya{display:flex;flex-direction:column;align-items:center;line-height:1.1}
+  .f3-arrow.ya span{font-size:10px;color:var(--good);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .p2loop{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+  .p2loop #p2path{fill:none;stroke:#e08a6a;stroke-width:2;stroke-dasharray:5 4}
+  .p2loop #p2lbl{fill:#e8a06a;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .f3-targets{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:none}
+  .f3-targets span{background:var(--card2);border:1px dashed #44506a;border-radius:8px;padding:5px 11px;font-size:12px;text-align:center;color:var(--text);white-space:nowrap}
+  .p3-row{display:flex;align-items:center;gap:10px;margin-top:24px;flex-wrap:nowrap}
+  .p3-batch{position:relative;display:flex;flex-direction:column;gap:7px;border:2px dotted var(--accent);border-radius:14px;padding:16px 16px 12px;background:#f0a83c0d;flex:none}
+  .p3-conv{display:flex;align-items:center;gap:6px}
+  .p3-mini{background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:11px;font-weight:600;white-space:nowrap}
+  .p3-mar{color:var(--accent);font-size:11px;font-weight:700}
+  .p3-dots{color:var(--muted);font-size:20px;letter-spacing:4px;text-align:center;line-height:.7;padding-top:2px}
+  .p3-big{border:2px dotted var(--accent);border-radius:14px;padding:16px 22px;text-align:center;font-weight:800;color:var(--accent);font-size:clamp(12px,1.25vw,15px);line-height:1.25;background:#f0a83c0d;white-space:nowrap;flex:none}
+  .p3-big small{display:block;color:#c79a4d;font-size:.76em;font-weight:500;margin-top:3px}
+  .res{display:flex;gap:20px;margin-top:32px;flex-wrap:wrap}
+  .res a,.res .copycard,.res .archcard{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;min-width:215px;flex:1;text-decoration:none;color:var(--text);cursor:pointer;transition:transform .2s ease,border-color .2s ease}
+  .res a:hover,.res .copycard:hover,.res .archcard:hover{transform:translateY(-4px);border-color:var(--accent)}
+  /* architecture diagram overlay (show/hide inside the deck) */
+  .arch-overlay{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;background:#0c1018f2;backdrop-filter:blur(4px);padding:16px 18px}
+  .arch-overlay.show{display:flex}
+  .arch-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .arch-bar .at{color:var(--accent);font-weight:700;font-size:15px;letter-spacing:.04em}
+  .arch-close{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px}
+  .arch-close:hover{border-color:var(--accent);color:var(--accent)}
+  .arch-overlay iframe{flex:1;width:100%;border:0;border-radius:12px;background:#fff}
+  .res .ric{color:var(--accent)}
+  .res .ric svg{width:26px;height:26px}
+  .res .rt{font-weight:700;font-size:clamp(16px,1.6vw,20px)}
+  .res .rd{color:var(--muted);font-size:14px;line-height:1.45}
+  .res .ru{color:var(--accent);font-size:13px;word-break:break-all;margin-top:auto;text-decoration:none}
+  .res .copyrow{display:flex;align-items:center;gap:10px;margin-top:auto;flex-wrap:wrap}
+  .res .copyrow .ru{margin-top:0}
+  .res .copybtn{background:var(--accent);color:#1a1205;border:none;border-radius:7px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+  .res .copybtn:hover{opacity:.85}
+
+  /* ---- appendix ---- */
+  pre.prompt{background:#0a0e15;border:1px solid var(--border);border-radius:12px;padding:20px;overflow:auto;max-height:66vh;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;color:#cfd8e8;white-space:pre-wrap}
+  .cfg{color:var(--muted);font-size:14px;line-height:1.7;margin-top:6px}
+  .cfg b{color:var(--text)}
+
+  /* ---- chrome ---- */
+  .footer{position:fixed;left:0;right:0;bottom:0;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:12px;color:var(--muted);z-index:20}
+  .progress{position:fixed;left:0;bottom:42px;height:3px;background:var(--accent);box-shadow:0 0 12px var(--accent);transition:width .35s ease;z-index:20}
+  .act-label{color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .counter{font-variant-numeric:tabular-nums}
+  .nav-hint{opacity:.6}
+  .notes{position:fixed;left:0;right:0;bottom:45px;background:#0a0e15ee;border-top:2px solid var(--accent);
+         padding:16px 24px 22px;max-height:42vh;overflow-y:auto;display:none;z-index:30;backdrop-filter:blur(4px)}
+  .notes.show{display:block}
+  .notes h5{color:var(--accent);text-transform:uppercase;letter-spacing:.1em;font-size:11px;margin-bottom:8px}
+  .notes p{font-size:15px;line-height:1.6;color:#dbe3f0;max-width:90ch}
+  .notes .todo{color:#e8a06a;font-weight:600}
+  .help{position:fixed;top:14px;right:18px;font-size:11px;color:#586377;z-index:20;text-align:right;line-height:1.5}
+  .badge-appendix{position:fixed;top:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--accent);z-index:20;display:none}
+  .home-btn{position:fixed;top:13px;left:18px;z-index:25;display:none;align-items:center;gap:7px;
+    background:var(--card);border:1px solid var(--border);border-radius:999px;padding:7px 15px;
+    color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:color .2s ease,border-color .2s ease,transform .2s ease}
+  .home-btn:hover{color:var(--accent);border-color:var(--accent);transform:translateX(-3px)}
+  .home-btn.show{display:inline-flex}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- ===== 1 TITLE ===== -->
+  <section class="slide center" data-act="I · Context"
+    data-notes="Open warm and brief. One line on what it is: an AI that calls the provider during an outage and brings back a clean report. The links open the live app, the code, and the plan, so you can jump to them on the spot or share them after. Keep this short and move to the work.">
+    <div>
+      <div class="logo logo-lg">V</div>
+      <h1>Vivant Downtime Check</h1>
+      <p class="tagline">An AI that calls your provider, so no one waits on hold.</p>
+      <nav class="agenda">
+        <a class="ag" data-goto="1"><span class="dot"></span>The problem</a>
+        <a class="ag" data-goto="2"><span class="dot"></span>How we attack the problem</a>
+        <a class="ag" data-goto="4"><span class="dot"></span>Demo</a>
+        <a class="ag" data-goto="14"><span class="dot"></span>What is next</a>
+        <a class="ag" data-goto="15"><span class="dot"></span>Resources</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ===== 2 PROBLEM ===== -->
+  <section class="slide" data-act="I · Context"
+    data-notes="Now the problem has a picture, so it lands fast. When a site goes down, a tech is stuck on the phone: long holds, menu after menu, then writing the notes up by hand, and doing it again for the next site. Keep it brief, let the visual carry it, then move to the solution.">
+    <div class="kicker">The problem</div>
+    <h2 class="t">Outage calls tie up your team.</h2>
+    <div class="prob-grid">
+      <div class="prob-copy">
+        <p class="lead2">When a site goes down, someone has to pick up the phone, and stay there.</p>
+        <ul class="painlist">
+          <li>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <div><b>Long holds.</b> <span>Twenty to forty minutes waiting, on a single call.</span></div>
+          </li>
+          <li>
+            <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="6" r="1.7"/><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/><circle cx="6" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/></svg>
+            <div><b>Endless menus.</b> <span>Press one, press two, repeat the menu.</span></div>
+          </li>
+          <li>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18 10l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>
+            <div><b>Notes by hand.</b> <span>Written up differently every time.</span></div>
+          </li>
+          <li>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="8" height="12"/><rect x="13" y="4" width="8" height="17"/><path d="M6 13h2M6 17h2M16 8h2M16 12h2M16 16h2"/></svg>
+            <div><b>Every site.</b> <span>The same call, across many client locations.</span></div>
+          </li>
+        </ul>
+      </div>
+      <div class="prob-art">
+        <svg viewBox="0 0 430 360" class="art-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A person on hold wearing a headset, beside a clock">
+          <defs>
+            <radialGradient id="pg" cx="45%" cy="42%" r="62%">
+              <stop offset="0%" stop-color="#f0a83c" stop-opacity=".20"/>
+              <stop offset="100%" stop-color="#f0a83c" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="200" cy="165" r="165" fill="url(#pg)"/>
+          <path d="M110 175 a90 90 0 0 1 180 0" fill="none" stroke="#f0a83c" stroke-width="14" stroke-linecap="round"/>
+          <rect x="86" y="158" width="48" height="92" rx="22" fill="#1a2230" stroke="#f0a83c" stroke-width="6"/>
+          <rect x="266" y="158" width="48" height="92" rx="22" fill="#1a2230" stroke="#f0a83c" stroke-width="6"/>
+          <path d="M110 250 q-6 66 80 70" fill="none" stroke="#f0a83c" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="192" cy="322" r="12" fill="#f0a83c"/>
+          <path d="M214 322 q16 0 18 -16" fill="none" stroke="#8a97ad" stroke-width="4" stroke-linecap="round"/>
+          <path d="M222 330 q28 0 30 -30" fill="none" stroke="#8a97ad" stroke-width="4" stroke-linecap="round" opacity=".55"/>
+          <circle cx="338" cy="84" r="40" fill="#141a26" stroke="#8a97ad" stroke-width="5"/>
+          <line x1="338" y1="84" x2="338" y2="58" stroke="#f0a83c" stroke-width="5" stroke-linecap="round"/>
+          <line x1="338" y1="84" x2="357" y2="92" stroke="#f0a83c" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <div class="float-chip c1">“All agents are busy. Please <b>hold</b>.”</div>
+        <div class="float-chip c2"><b>Press 1</b> for support…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3 SOLUTION ===== -->
+  <section class="slide" data-act="II · How we attack the problem"
+    data-notes="This is the solution in plain terms, and it follows a simple flow. First it receives the outage details for the site. Then it calls the provider and works through the phone system on its own. It captures what matters, the outage status, the cause, the time, the ticket. Then it writes a clean report and hands it back, never making anything up. Land on: no one tied to the phone.">
+    <div class="kicker">How we attack the problem</div>
+    <h2 class="t">It takes the outage, makes the call,<br>and reports back.</h2>
+    <div class="sol-grid">
+      <ul class="points">
+        <li>It <b>receives the outage details</b> for the site: location, address, account number, and PIN.</li>
+        <li>An <b>AI agent calls the provider</b> and works through whatever it reaches, a person, a menu, or a bot.</li>
+        <li>It <b>writes a clean report</b>, the outage, cause, time, and ticket, never making anything up.</li>
+      </ul>
+      <div class="sol-flow">
+        <div class="flow-node">
+          <span class="fn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/></svg></span>
+          <div class="fn-txt"><b>Enter the outage</b></div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="fn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.8 4.5-2.2 1.4a11 11 0 004.9 4.9l1.4-2.2L19 15.5V19a1.5 1.5 0 01-1.6 1.5A15.5 15.5 0 014.5 6.6 1.5 1.5 0 015 4z"/></svg></span>
+          <div class="fn-txt"><b>Phone call by AI agent</b></div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node hot">
+          <span class="fn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h4"/><path d="M8.5 16.5l2 2 4-4"/></svg></span>
+          <div class="fn-txt"><b>Write the report</b></div>
+        </div>
+      </div>
+    </div>
+    <p class="lead">No one tied to the phone. A result your team can trust.</p>
+  </section>
+
+  <!-- ===== 4 LOOP ===== -->
+  <section class="slide" data-act="II · How we attack the problem"
+    data-notes="Walk the five steps, and now you can speak to the stack behind each one. Step one is the form: React on the front, FastAPI and SQLite on the back. Step two starts the call through Vapi, our AI voice platform, which sits behind a layer we can swap anytime. Step three is the live conversation: it listens with Deepgram speech to text, thinks with a fast GPT 4o mini, and speaks back through Vapi text to speech, using the Elliot voice. Step four is the payoff: Claude turns the whole call into a clean, structured report, and never invents. Your team can then open it in the app and verify it against the recording and transcript. The color legend decodes frontend, backend, voice, AI, and speech.">
+    <div class="kicker">What it does, step by step</div>
+    <h2 class="t">Enter it once. The agent does the rest.</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div class="h">Enter the outage</div><div class="d">A web form, saved to the backend. It stands in for a ticket.</div>
+        <div class="tech"><span class="tt fe">React</span><span class="tt be">FastAPI</span><span class="tt be">SQLite</span></div></div>
+      <div class="arrow-h">→</div>
+      <div class="group">
+        <div class="group-label">2 · Phone call by AI agent</div>
+        <div class="group-row">
+          <div class="step"><div class="n">2.1</div><div class="h">Dispatch the agent</div><div class="d">The backend starts the call, through a voice layer we can swap.</div>
+            <div class="tech"><span class="tt vo">Vapi</span></div></div>
+          <div class="step"><div class="n">2.2</div><div class="h">Work through anything</div><div class="d">A person, a keypad menu, or a bot. It listens, thinks, and speaks in real time.</div>
+            <div class="tech"><span class="tt sp">Deepgram · ASR</span><span class="tt ai">GPT 4o mini</span><span class="tt sp">Vapi TTS · Elliot voice</span></div></div>
+        </div>
+      </div>
+      <div class="arrow-h">→</div>
+      <div class="step"><div class="n">3</div><div class="h">Write the report</div><div class="d">Claude turns the whole call into clean, structured facts. Never invents.</div>
+        <div class="tech"><span class="tt ai">Claude · Anthropic</span></div></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw fe"></i>Frontend</span>
+      <span><i class="sw be"></i>Backend</span>
+      <span><i class="sw vo"></i>Voice platform</span>
+      <span><i class="sw ai"></i>AI model</span>
+      <span><i class="sw sp"></i>Speech, ASR and TTS</span>
+      <span class="lg-note">Vapi sits behind a swappable layer, so the voice platform stays a choice we control.</span>
+    </div>
+  </section>
+
+  <!-- ===== TRIAGE FORM ===== -->
+  <section class="slide" data-act="III · Demo"
+    data-notes="This is where it begins. The triage form stands in for a ticket today and holds everything the agent needs: the location, the address, the provider and its number, the account number, and the PIN. Point out that the account number and PIN are masked on screen and kept out of the logs. You fill it once and hit Dispatch Agent.">
+    <div class="kicker">The demo · it starts here</div>
+    <div class="formcard">
+      <div class="formhead">Site Triage Input</div>
+      <div class="fgrid">
+        <div class="field"><label>Location Name</label><div class="inp ph">e.g. Vivant Corp</div></div>
+        <div class="field"><label>Location Phone Number</label><div class="inp-wrap"><div class="inp ph">+1469…</div><span class="inp-btn">•••</span></div></div>
+        <div class="field"><label>Internet Service Provider (ISP)</label><div class="inp ph">e.g. AT&amp;T Internet</div></div>
+        <div class="field"><label>Provider Phone Number (Number to Call) *</label><div class="inp-wrap"><div class="inp ph">e.g. +18002882020</div><span class="inp-btn">•••</span></div></div>
+        <div class="field full"><label>Location Address</label><div class="inp ph">2727 Lyndon B Johnson Fwy…</div></div>
+        <div class="field"><label>Account Number *</label><div class="inp-wrap"><div class="inp ph">123456789</div><span class="inp-btn">Show</span></div></div>
+        <div class="field"><label>Security PIN</label><div class="inp-wrap"><div class="inp ph">Passcode (optional)</div><span class="inp-btn">Show</span></div></div>
+        <div class="field"><label>Your Name</label><div class="inp ph">John Doe</div></div>
+        <div class="field"><label>Circuit ID</label><div class="inp ph">optional — some ISPs require it</div></div>
+        <div class="field"><label>Callback Phone</label><div class="inp ph">+1469…</div></div>
+        <div class="field"></div>
+        <div class="field full"><label>Symptoms / notes</label><div class="inp ph">Internet completely down</div></div>
+        <div class="field"><label>Troubleshooting already done</label><div class="inp ph">Modem power-cycled</div></div>
+        <div class="field"><label>Modem light status</label><div class="inp ph">Solid red</div></div>
+      </div>
+      <div class="fcheck"><span class="box"></span> Use "equipment already checked" opening (skip troubleshooting)</div>
+      <span class="save-btn">Save request</span>
+    </div>
+    <div class="savedtitle">Saved requests</div>
+    <div class="savedtable">
+      <div class="streq sthead"><div>Date &amp; Time</div><div>Location</div><div>Service</div><div>Account</div><div>Status</div><div></div></div>
+      <div class="streq stbody"><div>Jun 1, 9:09 PM</div><div>Vivant Corp</div><div>AT&amp;T</div><div>••••1762</div><span class="stbadge">Completed</span><div class="stacts"><span class="stbtn">Dispatch Agent</span><span class="stbtn solid">View Report</span></div></div>
+      <div class="stmore">▸ Show older requests</div>
+    </div>
+  </section>
+
+  <!-- ===== DEMO VIDEO ===== -->
+  <section class="slide" data-act="III · Demo"
+    data-notes="This is the live demo. Talk over the muted video. Say: I enter the outage for our site, I save it, then I click Dispatch Agent and the status turns to Calling. The agent places the call, and when it finishes I click Get Report. Then point at the report card: outcome, time, ticket, recording, transcript. If the video is not loaded you will see a placeholder with instructions.">
+    <div class="kicker">Live demo, the app</div>
+    <h2 class="t">From outage to report, start to finish.</h2>
+    <div class="stage">
+      <div class="videobox" id="videobox">
+        <video id="appvideo" controls muted playsinline preload="metadata">
+          <source src="app-run.mp4" type="video/mp4">
+        </video>
+        <div class="vid-placeholder" id="vidph">
+          <div class="ic">🎬</div>
+          <h3>Drop the screen recording here</h3>
+          <p>Save a short muted capture of one full run as<br>
+          <code>docs/demo/app-run.mov</code> or <code>app-run.mp4</code>, then refresh.</p>
+          <p style="margin-top:12px">Capture: fill the form, <b>Save request</b>, <b>Dispatch Agent</b> (status turns to Calling), wait for the call to finish, <b>Get Report</b>.</p>
+        </div>
+      </div>
+      <div class="side">
+        <span class="pill">Talk over this</span>
+        <ol>
+          <li>Enter the outage on the form.</li>
+          <li>Click <b>Save request</b>. It appears below.</li>
+          <li>Click <b>Dispatch Agent</b>. Status turns to <b>Calling</b>.</li>
+          <li>The agent places the call.</li>
+          <li>Click <b>Get Report</b>. The card appears.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ATT CALL: audio + transcript + chapters ===== -->
+  <section class="slide" data-act="III · Demo" data-scenario="att"
+    data-notes="This is the actual call behind the demo, our AI working through AT&T's real enterprise system. Press play, or use the Jump to buttons to skip straight to a moment: the greeting and account, verification, the long enterprise IVR maze, reaching the rep Peroni, the line test, and the result, no outage. This is the AI to AI case, our agent versus their automated system, handled end to end.">
+    <div class="kicker">Listen · the full call</div>
+    <div class="scn-stage">
+      <div class="scn-left">
+        <span class="tag hard">Our AI ↔ AT&amp;T's AI</span>
+        <h2 class="scn-h">It works through AT&amp;T's system.</h2>
+        <p class="scn-d">A real call: our agent navigates AT&amp;T's automated maze and an AI rep, end to end.</p>
+        <audio class="scn-audio" data-for="att" controls preload="metadata"><source src="att-call.mp3" type="audio/mpeg"></audio>
+        <div class="chapters">
+          <span class="chlabel">Jump to</span>
+          <button class="chapter" data-for="att" data-line="0">Greeting &amp; account</button>
+          <button class="chapter" data-for="att" data-line="6">Verification</button>
+          <button class="chapter" data-for="att" data-line="10">Enterprise IVR maze</button>
+          <button class="chapter" data-for="att" data-line="17">Reaches a rep</button>
+          <button class="chapter" data-for="att" data-line="23">Line test</button>
+          <button class="chapter" data-for="att" data-line="25">Result: no outage</button>
+        </div>
+      </div>
+      <div class="scn-transcript" data-for="att"></div>
+    </div>
+  </section>
+
+  <!-- ===== 6 SCENARIO INTRO ===== -->
+  <section class="slide" data-act="III · Demo"
+    data-notes="Set up the series. Say: a call can go five ways, and the agent handles all five. We are going to listen to one real call of each, from the easiest to the hardest. Then click forward and go one by one. Mention the proof: every path proven on real calls, forty nine tests passing, and we built our own menus and bots so we could stress test before ever calling a real provider.">
+    <div class="kicker">Now let us listen, five real calls</div>
+    <h2 class="t">A call can go five ways. We handle all five.</h2>
+    <ul class="five">
+      <li><span class="num">1</span><span class="lbl"><b>A live person.</b> <span>A real representative on the line.</span></span></li>
+      <li><span class="num">2</span><span class="lbl"><b>A simple keypad menu.</b> <span>Press one, press two.</span></span></li>
+      <li><span class="num">3</span><span class="lbl"><b>A hard, branching keypad menu.</b> <span>Many levels, and it types in data.</span></span></li>
+      <li><span class="num">4</span><span class="lbl"><b>A talking bot.</b> <span>It pushes self service, we ask for a person.</span></span></li>
+      <li><span class="num">5</span><span class="lbl"><b>The hardest test.</b> <span>Everything at once.</span></span></li>
+    </ul>
+    <span class="proofline">✓ Every path proven on real calls · 49 tests passing · own menus and bots built to stress test</span>
+  </section>
+
+  <!-- ===== 7 SCENARIO 1 HUMAN ===== -->
+  <section class="slide" data-act="III · Demo" data-scenario="human"
+    data-notes="Scenario one, the easiest. The agent reaches a real person. Notice how natural and polite it sounds. The person confirms the outage, gives a rough two hour estimate, and says there is no ticket number. Watch the agent report no ticket honestly instead of inventing one. Play twenty or thirty seconds, then move on.">
+    <div class="kicker">Scenario 1 of 5</div>
+    <div class="scn-stage">
+      <div class="scn-left">
+        <span class="tag human">Agent to a live person</span>
+        <h2 class="scn-h">A real representative</h2>
+        <p class="scn-d">It speaks naturally with a person and gets the details.</p>
+        <audio class="scn-audio" data-for="human" controls preload="metadata"><source src="snippet-human.wav" type="audio/wav"></audio>
+        <div class="chapters">
+          <span class="chlabel">Jump to</span>
+          <button class="chapter" data-for="human" data-line="0">Greeting</button>
+          <button class="chapter" data-for="human" data-line="3">Confirms outage</button>
+          <button class="chapter" data-for="human" data-line="5">The details</button>
+        </div>
+        <p class="listen"><b>Listen for:</b> a warm, natural conversation, and an honest result when there is no ticket.</p>
+        <div class="scn-result none">Result: <b>outage confirmed · about two hours · no ticket given</b></div>
+      </div>
+      <div class="scn-transcript" data-for="human"></div>
+    </div>
+  </section>
+
+  <!-- ===== 8 SCENARIO 2 SIMPLE IVR ===== -->
+  <section class="slide" data-act="III · Demo" data-scenario="ivrSimple"
+    data-notes="Scenario two, a simple keypad menu. The agent listens to the options and presses the keys itself, no human involved. It reaches the recorded outage message and captures the cause, the time, and the reference number. Point out that it pressed the keypad on its own.">
+    <div class="kicker">Scenario 2 of 5</div>
+    <div class="scn-stage">
+      <div class="scn-left">
+        <span class="tag ivr">Agent to a simple keypad menu</span>
+        <h2 class="scn-h">A keypad menu</h2>
+        <p class="scn-d">It listens, then presses the keys itself to reach the outage message.</p>
+        <audio class="scn-audio" data-for="ivrSimple" controls preload="metadata"><source src="snippet-ivr-simple.wav" type="audio/wav"></audio>
+        <div class="chapters">
+          <span class="chlabel">Jump to</span>
+          <button class="chapter" data-for="ivrSimple" data-line="1">Keypad menu</button>
+          <button class="chapter" data-for="ivrSimple" data-line="3">Outage message</button>
+        </div>
+        <p class="listen"><b>Listen for:</b> the agent presses a key, then the recorded message reads out the outage.</p>
+        <div class="scn-result">Result: <b>fiber cut · 6 PM today · reference 12345</b></div>
+      </div>
+      <div class="scn-transcript" data-for="ivrSimple"></div>
+    </div>
+  </section>
+
+  <!-- ===== 9 SCENARIO 3 HARD IVR ===== -->
+  <section class="slide" data-act="III · Demo" data-scenario="ivrHard"
+    data-notes="Scenario three, a hard menu. Four levels deep, and partway through it asks the agent to type in a ten digit account number on the keypad. The agent does it, then reaches the outage message and captures severe weather, nine PM, and the reference number. This is the one that trips up simple scripts.">
+    <div class="kicker">Scenario 3 of 5</div>
+    <div class="scn-stage">
+      <div class="scn-left">
+        <span class="tag ivrh">Agent to a hard, branching menu</span>
+        <h2 class="scn-h">A branching menu, with data entry</h2>
+        <p class="scn-d">Four levels deep, and it types the account number on the keypad.</p>
+        <audio class="scn-audio" data-for="ivrHard" controls preload="metadata"><source src="snippet-ivr-hard.wav" type="audio/wav"></audio>
+        <div class="chapters">
+          <span class="chlabel">Jump to</span>
+          <button class="chapter" data-for="ivrHard" data-line="1">Menu maze</button>
+          <button class="chapter" data-for="ivrHard" data-line="4">Data entry</button>
+          <button class="chapter" data-for="ivrHard" data-line="5">Asks for a rep</button>
+          <button class="chapter" data-for="ivrHard" data-line="6">Outage message</button>
+        </div>
+        <p class="listen"><b>Listen for:</b> the agent works through four menus, then enters the account number itself.</p>
+        <div class="scn-result">Result: <b>severe weather · 9 PM tonight · reference 67890</b></div>
+      </div>
+      <div class="scn-transcript" data-for="ivrHard"></div>
+    </div>
+  </section>
+
+  <!-- ===== 10 SCENARIO 4 BOT ===== -->
+  <section class="slide" data-act="III · Demo" data-scenario="bot"
+    data-notes="Scenario four, a talking bot. This is the case that is becoming common, where the provider front line is itself an AI. The bot tries twice to push us to a text link. The agent politely declines both times and asks for a real representative. It gets connected, and the rep gives the outage details.">
+    <div class="kicker">Scenario 4 of 5</div>
+    <div class="scn-stage">
+      <div class="scn-left">
+        <span class="tag bot">Agent to a talking bot</span>
+        <h2 class="scn-h">A talking bot, then a rep</h2>
+        <p class="scn-d">The bot pushes self service. The agent declines and asks for a person.</p>
+        <audio class="scn-audio" data-for="bot" controls preload="metadata"><source src="snippet-bot-simple.wav" type="audio/wav"></audio>
+        <div class="chapters">
+          <span class="chlabel">Jump to</span>
+          <button class="chapter" data-for="bot" data-line="0">Greeting</button>
+          <button class="chapter" data-for="bot" data-line="2">Declines text</button>
+          <button class="chapter" data-for="bot" data-line="5">Asks for a rep</button>
+          <button class="chapter" data-for="bot" data-line="7">Reaches the rep</button>
+          <button class="chapter" data-for="bot" data-line="11">Result</button>
+        </div>
+        <p class="listen"><b>Listen for:</b> the agent declines the text link twice, then asks for a representative.</p>
+        <div class="scn-result">Result: <b>fiber cut · 7 PM today · ticket 99887</b></div>
+      </div>
+      <div class="scn-transcript" data-for="bot"></div>
+    </div>
+  </section>
+
+  <!-- ===== 11 SCENARIO 5 GAUNTLET ===== -->
+  <section class="slide" data-act="III · Demo" data-scenario="gauntlet"
+    data-notes="Scenario five, the hardest test we built. Everything at once. The bot deflects twice, then runs a full verification gauntlet, account number, PIN, and address, then puts the agent on hold for a rep. The agent clears every hurdle, gives the right details only when asked, holds, reaches the rep, gets the facts, and hangs up cleanly. About ninety seconds in, the point is made.">
+    <div class="kicker">Scenario 5 of 5 · the showcase</div>
+    <div class="scn-stage">
+      <div class="scn-left">
+        <span class="tag hard">The hardest test</span>
+        <h2 class="scn-h">Everything at once</h2>
+        <p class="scn-d">Double deflection, a full verification gauntlet, and a hold for a rep.</p>
+        <audio class="scn-audio" data-for="gauntlet" controls preload="metadata" poster="audio-poster.png"><source src="gauntlet-recording.wav" type="audio/wav"></audio>
+        <div class="chapters">
+          <span class="chlabel">Jump to</span>
+          <button class="chapter" data-for="gauntlet" data-line="0">Greeting</button>
+          <button class="chapter" data-for="gauntlet" data-line="7">Double deflection</button>
+          <button class="chapter" data-for="gauntlet" data-line="11">Verification</button>
+          <button class="chapter" data-for="gauntlet" data-line="18">Holds for a rep</button>
+          <button class="chapter" data-for="gauntlet" data-line="19">Reaches the rep</button>
+          <button class="chapter" data-for="gauntlet" data-line="23">Result</button>
+        </div>
+        <p class="listen"><b>Listen for:</b> it clears account number, PIN, and address, holds, then gets the facts.</p>
+        <div class="scn-result">Result: <b>damaged fiber line · 8 PM today · ticket 55432</b></div>
+      </div>
+      <div class="scn-transcript" data-for="gauntlet"></div>
+    </div>
+  </section>
+
+  <!-- ===== 12 REPORT ===== -->
+  <section class="slide" data-act="III · Demo"
+    data-notes="This is a real report the agent produced. Notice the honesty: it says No outage found, and Not provided for both the ETA and the ticket, because none were given. It spoke with a human, Peroni, who ran a line test and confirmed no outage, even noting the modem uptime and connected devices. Detailed, factual, and nothing invented. This is the never make anything up rule in action.">
+    <div class="kicker">A real report it produced</div>
+    <h2 class="t" style="margin-bottom:14px">This is what your team reads.</h2>
+    <div class="report">
+      <div class="rhead">
+        <h3>Report — Vivant Corp</h3>
+        <span class="outcome">No outage found</span>
+      </div>
+      <dl class="rgrid">
+        <div><dt>Spoke with</dt><dd>Human — Peroni</dd></div>
+        <div><dt>Outage reason</dt><dd>No outage reported</dd></div>
+        <div><dt>Estimated restoration (ETA)</dt><dd class="np">Not provided</dd></div>
+        <div><dt>Reference / ticket #</dt><dd class="np">Not provided</dd></div>
+      </dl>
+      <p class="summary">The caller, Hamed Mazarawi on behalf of Vivant Corp, contacted AT&amp;T to check for a known internet outage at 2727 LBJ Freeway, Farmers Branch TX 75234. The rep Peroni ran a line test and confirmed no outage in the area, noting the modem was up and running with a current uptime of 14 days, 8 hours, 43 minutes and 4 devices connected via Ethernet. No outage or trouble ticket was identified.</p>
+      <div class="stamp">Call recording · 7:23 · full transcript available · written by Claude</div>
+    </div>
+  </section>
+
+  <!-- ===== WHAT'S NEXT / CLOSE ===== -->
+  <section class="slide" data-act="IV · What's next"
+    data-notes="Four phases. Phase 0 is what works today: enter the outage, the AI agent calls, it writes the report. Phase 1 plugs into Utiliko: it pulls the ticket and pushes the finished report back. Phase 2 adds a per call quality gate, an LLM judge using a reasoning model: pass goes to Utiliko, fail loops back and the agent calls again. Phase 3 zooms out: take a month of calls, a thousand or more, and run an evolutionary review with an omni model like Gemini Pro across all of them. It finds the weak link, the ASR, the LLM prompt, the TTS, or the platform, and recommends exactly what to change. That is how the whole system keeps getting better.">
+    <div class="kicker">What is next</div>
+    <div class="flow3">
+      <div class="f3-tag done">Phase 0</div>
+      <div class="f3-node">Enter the outage</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node">Phone call by AI agent</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node">Write the report</div>
+    </div>
+    <div class="flow3">
+      <div class="f3-tag">Phase 1</div>
+      <div class="f3-node hot">Get outage from Utiliko</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node">Phone call by AI agent</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node">Write the report</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node hot">Push report to Utiliko</div>
+    </div>
+    <div class="flow3 phase2" id="p2row">
+      <div class="f3-tag">Phase 2</div>
+      <div class="f3-node">Get outage from Utiliko</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node" id="p2call">Phone call by AI agent</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node">Write the report</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-judge" id="p2judge">LLM as a judge<small>reasoning model</small></div>
+      <div class="f3-arrow ya"><span>pass</span>→</div>
+      <div class="f3-node hot">Push report to Utiliko</div>
+      <svg class="p2loop" id="p2loop" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="ah" viewBox="0 0 10 10" markerWidth="7" markerHeight="7" refX="7" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e08a6a"/></marker></defs>
+        <path id="p2path" marker-end="url(#ah)"></path>
+        <text id="p2lbl" text-anchor="middle">fail</text>
+      </svg>
+    </div>
+    <div class="p3-row">
+      <div class="f3-tag">Phase 3</div>
+      <div class="p3-batch">
+        <div class="group-label">1,000 calls · 30 days</div>
+        <div class="p3-conv"><span class="p3-mini">Call</span><span class="p3-mar">→</span><span class="p3-mini">Report</span><span class="p3-mar">→</span><span class="p3-mini">Judge</span></div>
+        <div class="p3-conv"><span class="p3-mini">Call</span><span class="p3-mar">→</span><span class="p3-mini">Report</span><span class="p3-mar">→</span><span class="p3-mini">Judge</span></div>
+        <div class="p3-dots">· · ·</div>
+      </div>
+      <div class="f3-arrow">→</div>
+      <div class="p3-big">Evolutionary review<small>omni model · Gemini Pro</small></div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-node hot">Improvement report</div>
+      <div class="f3-arrow">→</div>
+      <div class="f3-targets"><span>ASR</span><span>TTS</span><span>LLM prompt</span><span>Platform</span></div>
+    </div>
+  </section>
+
+  <!-- ===== RESOURCES / LINKS ===== -->
+  <section class="slide" data-act="V · Resources"
+    data-notes="Closing slide, the resources. Everything is open: the full code, tests, and documentation live in the GitHub repository. The live app runs the demo end to end. The project plan has every decision, the architecture, and the roadmap. Invite them to dig in, and share the links after.">
+    <div class="kicker">The project</div>
+    <h2 class="t">Resources.</h2>
+    <div class="res">
+      <a href="https://github.com/Mohammad-Maydanchi/outage_ai_assistant" target="_blank" rel="noopener">
+        <div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l-5 7 5 7M15 5l5 7-5 7"/></svg></div>
+        <div class="rt">GitHub repository</div>
+        <div class="rd">All the code, tests, and documentation.</div>
+        <div class="ru">github.com/Mohammad-Maydanchi/outage_ai_assistant</div>
+      </a>
+      <a href="http://localhost:5174" target="_blank" rel="noopener">
+        <div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg></div>
+        <div class="rt">Run it yourself</div>
+        <div class="rd">The live app, end to end.</div>
+        <div class="ru">localhost:5174</div>
+      </a>
+      <a href="https://github.com/Mohammad-Maydanchi/outage_ai_assistant/blob/main/docs/project_plan.md" target="_blank" rel="noopener">
+        <div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></div>
+        <div class="rt">Project plan &amp; docs</div>
+        <div class="rd">Decisions, architecture, and the roadmap.</div>
+        <div class="ru">/docs/project_plan.md</div>
+      </a>
+      <div class="copycard">
+        <div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></div>
+        <div class="rt">This demo deck</div>
+        <div class="rd">Copy the link and share it with anyone.</div>
+        <div class="copyrow">
+          <a class="ru" href="https://transcendent-donut-8e6475.netlify.app/" target="_blank" rel="noopener">transcendent-donut-8e6475.netlify.app</a>
+          <button class="copybtn" type="button" data-url="https://transcendent-donut-8e6475.netlify.app/">Copy</button>
+        </div>
+      </div>
+      <div class="archcard" id="archCard">
+        <div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="5" rx="1"/><rect x="15" y="3" width="6" height="5" rx="1"/><rect x="9" y="16" width="6" height="5" rx="1"/><path d="M6 8v3a2 2 0 002 2h8a2 2 0 002-2V8M12 13v3"/></svg></div>
+        <div class="rt">Architecture diagram</div>
+        <div class="rd">How the whole system fits together.</div>
+        <div class="ru" style="text-decoration:none">Open in the deck →</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="arch-overlay" id="archOverlay">
+  <div class="arch-bar">
+    <span class="at">Architecture diagram</span>
+    <button class="arch-close" id="archClose">✕ Close</button>
+  </div>
+  <iframe id="archFrame" data-src="architecture.html" title="Architecture diagram"></iframe>
+</div>
+
+<div class="progress" id="progress"></div>
+<div class="footer">
+  <span class="act-label" id="actLabel">I · Problem</span>
+  <span class="nav-hint">← → navigate · S speaker notes · F fullscreen</span>
+  <span class="counter" id="counter">1 / 16</span>
+</div>
+<div class="help">Vivant Downtime Check · demo deck<br>← → move · S notes · F fullscreen</div>
+<div class="badge-appendix" id="apxBadge">Appendix, out of the main flow</div>
+<button class="home-btn" id="homeBtn">↑ Agenda</button>
+<div class="notes" id="notes"><h5>Speaker notes</h5><p id="notesText"></p></div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const mainCount = slides.filter(s=>!s.dataset.appendix).length;
+  let i = 0;
+  const progress = document.getElementById('progress');
+  const counter  = document.getElementById('counter');
+  const actLabel = document.getElementById('actLabel');
+  const notes    = document.getElementById('notes');
+  const notesText= document.getElementById('notesText');
+  const apxBadge = document.getElementById('apxBadge');
+  const homeBtn  = document.getElementById('homeBtn');
+
+  function stopAllMedia(){ document.querySelectorAll('audio,video').forEach(m=>{ try{m.pause();}catch(e){} }); }
+  function render(){
+    slides.forEach((s,n)=>s.classList.toggle('active', n===i));
+    const s = slides[i];
+    const isApx = !!s.dataset.appendix;
+    counter.textContent = isApx ? ('Appendix') : ((i+1) + ' / ' + mainCount);
+    actLabel.textContent = s.dataset.act || '';
+    apxBadge.style.display = isApx ? 'block' : 'none';
+    homeBtn.classList.toggle('show', i!==0);
+    notesText.innerHTML = (s.dataset.notes||'').replace(/&/g,'&amp;').replace(/TODO:/g,'<span class="todo">TODO:</span>');
+    progress.style.width = ((i)/(slides.length-1))*100 + '%';
+    requestAnimationFrame(drawLoop);
+  }
+  /* draw the Phase 2 "no" feedback curve from the judge back to the call box */
+  function drawLoop(){
+    const row=document.getElementById('p2row'); if(!row) return;
+    const call=document.getElementById('p2call'), judge=document.getElementById('p2judge');
+    const svg=document.getElementById('p2loop'), path=document.getElementById('p2path'), lbl=document.getElementById('p2lbl');
+    if(!call||!judge||!svg) return;
+    const rb=row.getBoundingClientRect(); if(rb.width===0) return;
+    const cb=call.getBoundingClientRect(), jb=judge.getBoundingClientRect();
+    svg.setAttribute('width', rb.width); svg.setAttribute('height', rb.height);
+    svg.setAttribute('viewBox','0 0 '+rb.width+' '+rb.height);
+    const x1=jb.left+jb.width/2-rb.left, y1=jb.bottom-rb.top;
+    const x2=cb.left+cb.width/2-rb.left, y2=cb.bottom-rb.top;
+    const dip=Math.max(y1,y2)+34;
+    path.setAttribute('d','M '+x1+' '+y1+' C '+x1+' '+dip+', '+x2+' '+dip+', '+x2+' '+(y2+4));
+    lbl.setAttribute('x',(x1+x2)/2); lbl.setAttribute('y',dip+4);
+  }
+  window.addEventListener('resize', drawLoop);
+  function go(n){ if(n<0||n>=slides.length) return; stopAllMedia(); i=n; render(); }
+  document.addEventListener('keydown',e=>{
+    var _ov=document.getElementById('archOverlay');
+    if(_ov && _ov.classList.contains('show')){ if(e.key==='Escape') _ov.classList.remove('show'); return; }
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); go(i+1); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); go(i-1); }
+    else if(e.key==='Home'){ go(0); }
+    else if(e.key==='End'){ go(mainCount-1); }
+    else if(e.key.toLowerCase()==='s'){ notes.classList.toggle('show'); }
+    else if(e.key.toLowerCase()==='a'){ go(slides.findIndex(s=>s.dataset.appendix)); }
+    else if(e.key.toLowerCase()==='f'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    if(e.target.closest('audio,video,button,a,details,.scn-transcript,.copycard,.archcard')) return;
+    go(i + (e.clientX > window.innerWidth/2 ? 1 : -1));
+  });
+
+  /* agenda links jump to a slide inside the deck */
+  document.querySelectorAll('.ag').forEach(a=>{
+    a.addEventListener('click',e=>{ e.stopPropagation(); const n=parseInt(a.dataset.goto,10); if(!isNaN(n)) go(n); });
+  });
+  /* back to the agenda (title slide) */
+  homeBtn.addEventListener('click',e=>{ e.stopPropagation(); go(0); });
+
+  /* copy the demo link to the clipboard */
+  function copyFallback(text, done){
+    try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }catch(e){}
+  }
+  document.querySelectorAll('.copybtn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const text=btn.dataset.url, orig=btn.textContent;
+      const done=()=>{ btn.textContent='Copied!'; setTimeout(()=>{ btn.textContent=orig; }, 1500); };
+      if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(done).catch(()=>copyFallback(text,done)); }
+      else { copyFallback(text,done); }
+    });
+  });
+
+  /* architecture diagram overlay: open from the Resources card, hide/unhide */
+  (function(){
+    var card=document.getElementById('archCard'), ov=document.getElementById('archOverlay'),
+        fr=document.getElementById('archFrame'), cl=document.getElementById('archClose');
+    if(card&&ov) card.addEventListener('click',function(e){ e.stopPropagation(); if(fr && !fr.getAttribute('src')){ fr.setAttribute('src', fr.dataset.src); } ov.classList.add('show'); });
+    if(cl&&ov) cl.addEventListener('click',function(e){ e.stopPropagation(); ov.classList.remove('show'); });
+  })();
+
+  /* video placeholder */
+  const vid = document.getElementById('appvideo');
+  const vidph = document.getElementById('vidph');
+  const hidePh=()=>{ vidph.style.display='none'; };
+  vid.addEventListener('loadedmetadata', hidePh);
+  vid.addEventListener('loadeddata', hidePh);
+  vid.addEventListener('canplay', hidePh);
+  vid.addEventListener('error', ()=>{ vidph.style.display='flex'; });
+
+  /* ---- scenario transcripts: [whoClass, label, text] ---- */
+  const SCN = {
+    human: [
+      ["ai","Agent","Hi, I'm calling about a business internet outage."],
+      ["sys","Person","Hello?"],
+      ["ai","Agent","This is John Doe, calling on behalf of Vivant Corp. I'm checking whether there is a known internet outage at our Perry Street location. Could you help me with that?"],
+      ["sys","Person","Yes, there is an outage here."],
+      ["ai","Agent","Thank you. Could you tell me the reason, and the estimated time for service to come back? And a reference or ticket number, if there is one?"],
+      ["sys","Person","There's a problem at the center. The estimate is about two hours. There's no ticket number for it."],
+      ["ai","Agent","Thank you very much. That's all I needed. Goodbye."]
+    ],
+    ivrSimple: [
+      ["ai","Agent","Hi, I'm calling about a business internet outage."],
+      ["sys","Menu","For sales, press one. For technical support and internet outages, press two."],
+      ["sys","Menu","Is this a personal or a business account?"],
+      ["sys","Menu","Thank you. One moment while I check our systems. AT&T is aware of an internet outage affecting your area, caused by a fiber cut. The estimated restoration time is six PM today. Your reference number is one two three four five."]
+    ],
+    ivrHard: [
+      ["ai","Agent","Hi, I'm calling about a business internet outage."],
+      ["sys","Menu","For service, press one. For billing, press two. For technical support, press three. For account changes, press four."],
+      ["sys","Menu","Technical support. For TV, press one. For internet, press two. For phone, press three."],
+      ["sys","Menu","Internet support. For slow speeds, press one. To report an outage, press two. For equipment, press three."],
+      ["sys","Menu","To look up your account, enter your ten digit phone number, followed by the pound key."],
+      ["ai","Agent","(the agent enters the account number on the keypad)"],
+      ["sys","Menu","Thank you. One moment. AT&T is aware of an internet outage in your area, caused by severe weather. The estimated restoration time is nine PM tonight. Your reference number is six seven eight nine zero."]
+    ],
+    bot: [
+      ["sys","Bot","Hello, thank you for calling AT&T. How can I help you today?"],
+      ["ai","Agent","Hi, I'm John Doe, calling on behalf of Vivant Corp. We have an internet outage at 2727 Linden, Dallas. I'd like to check if there are any known outages in that area."],
+      ["sys","Bot","You can check outages online. Can I send you a text with more information?"],
+      ["ai","Agent","I appreciate the offer, but I'd prefer to get the information over the phone. Could you check if there's a known outage?"],
+      ["sys","Bot","You can also check online. Can I send you a text with more information?"],
+      ["ai","Agent","I'd really like to speak with a technical support representative about the outage. Could you connect me?"],
+      ["sys","Bot","One moment while I connect you to technical support."],
+      ["sys","Rep","Hi, this is technical support. How can I help you today?"],
+      ["ai","Agent","We have an internet outage at 2727 Linden, Dallas. Can you check if there's a known outage in that area?"],
+      ["sys","Rep","Yes, there is an internet outage in your area. The cause is a fiber cut."],
+      ["ai","Agent","Thank you. Do you have an estimated restoration time? And a reference or ticket number?"],
+      ["sys","Rep","The estimated restoration time is seven PM today. Your reference ticket number is nine nine eight eight seven."],
+      ["ai","Agent","That's all I needed. Thanks for your help. Goodbye."]
+    ],
+    gauntlet: [
+      ["ai","Agent","Hi, I'm calling about a business internet outage."],
+      ["sys","Bot","Hello?"],
+      ["ai","Agent","Hi there. This is John Doe, calling on behalf of Vivant Corp. I'm checking on an internet outage for our location at 2727 Linden, Dallas. Could you help me with that?"],
+      ["sys","Bot","Which service are you calling about? Internet, TV, or phone?"],
+      ["ai","Agent","I'm calling about the internet service."],
+      ["sys","Bot","Is this a personal or a business account?"],
+      ["ai","Agent","This is a business account."],
+      ["sys","Bot","You might want to check for outages online. Can I send you a text with the link?"],
+      ["ai","Agent","I appreciate the offer, but I'd prefer to check on the outage directly with you. Could you help me with that?"],
+      ["sys","Bot","Are you sure? It's the fastest way. Can I text you the link?"],
+      ["ai","Agent","Thank you, but I'd really like to speak with a representative about the outage."],
+      ["sys","Bot","Sure. First, I need to verify a few details. Can I get the account number?"],
+      ["ai","Agent","Yes. The account number is one two three four five six seven eight nine zero."],
+      ["sys","Bot","Thank you. And the security PIN, or the phone number on the account."],
+      ["ai","Agent","The PIN is four three two one."],
+      ["sys","Bot","Thank you. Can you confirm the service address, please?"],
+      ["ai","Agent","The service address is 2727 Linden, Dallas."],
+      ["sys","Bot","All our representatives are currently helping other customers. You can keep holding, or we can call you back. Would you like to hold?"],
+      ["ai","Agent","I'll hold. Thank you."],
+      ["sys","Rep","Connecting. Hi, this is technical support. How can I help you today?"],
+      ["ai","Agent","I'm checking on an internet outage at 2727 Linden, Dallas. Can you give me the status of the outage?"],
+      ["sys","Rep","Yes. There is currently an internet outage in your area. Anything else you'd like to know?"],
+      ["ai","Agent","Could you tell me the reason for the outage, and the estimated time for it to come back?"],
+      ["sys","Rep","The cause is a damaged fiber line. The estimated restoration time is eight PM today."],
+      ["ai","Agent","Thank you. Could you give me a reference or ticket number?"],
+      ["sys","Rep","Certainly. The reference ticket number is five five four three two."],
+      ["ai","Agent","That's all I needed. Thanks. Goodbye."]
+    ],
+    att: [
+      ["sys","AT&T","Welcome to AT&T. Calls are recorded for quality and the purposes stated in our privacy notice."],
+      ["ai","Agent","Hi, I'm calling about a business internet outage."],
+      ["sys","AT&T","Please tell me the account number or the phone number on the account."],
+      ["ai","Agent","The account number is 3 3 2 3 4 1 7 7 6 2."],
+      ["sys","AT&T","One moment, please. Now, how may I help you today?"],
+      ["ai","Agent","I'm checking if there's a known internet outage at our location, Vivant Corp, 2727 LBJ Freeway, Farmers Branch."],
+      ["sys","AT&T","To verify, what is the four digit passcode on the account?"],
+      ["ai","Agent","The passcode is 1 9 8 3."],
+      ["sys","AT&T","Let me find someone to help you. One moment, please."],
+      ["ai","Agent","Thanks, I appreciate it."],
+      ["sys","AT&T IVR","Thank you for calling AT&T High Speed Internet Enterprise. Residential, press one. Previously SBC, press two. Previously BellSouth, press three. AT&T enterprise account, press four."],
+      ["sys","AT&T IVR","For service installation, press one. For technical or repair assistance, press two. For billing, press three. To order new service, press four."],
+      ["sys","AT&T IVR","To report a trouble, press one. For status on a ticket, press two."],
+      ["sys","AT&T IVR","To check the status of an existing trouble, say your ticket or case number now."],
+      ["ai","Agent","I don't have the ticket number on hand."],
+      ["sys","AT&T IVR","Please hold, and I'll get someone to help you."],
+      ["ai","Agent","Thank you."],
+      ["sys","Peroni","Thank you for calling Enterprise Care. My name is Peroni. How may I help you?"],
+      ["ai","Agent","Hello, Peroni. I'm Hamed Mazarawi on behalf of Vivant Corp. I'm checking for a known internet outage at 2727 LBJ Freeway, Farmers Branch, TX 75234."],
+      ["sys","Peroni","Do you have any account information?"],
+      ["ai","Agent","Yes. Account number 3 3 2 3 4 1 7 7 6 2, passcode 1 9 8 3."],
+      ["sys","Peroni","Company Vivant Corp, site 2727 LBJ Freeway, Farmers Branch, Texas 75234. Is that correct?"],
+      ["ai","Agent","Yes, that's correct."],
+      ["sys","Peroni","I've initiated the line test. Let the result come."],
+      ["ai","Agent","Thank you. I appreciate your assistance."],
+      ["sys","Peroni","Your modem is up and running, no T3 or D4 error on the line. Current uptime 14 days, 8 hours, 43 minutes. Four devices connected via Ethernet, none via Wi-Fi."],
+      ["ai","Agent","Thank you. Is there a known internet outage in our area?"],
+      ["sys","Peroni","No."],
+      ["ai","Agent","Thank you for confirming there's no outage. That's all I needed. Goodbye."]
+    ]
+  };
+  /* real per-line start times (seconds) from the call, for accurate jumps + sync */
+  const TIMES = {
+    att: [7.7,15.2,28.5,36.1,40.9,48.0,55.9,67.2,91.1,111.0,115.3,171.4,196.5,215.3,228.2,233.8,239.0,263.6,272.4,297.9,302.1,341.1,356.5,374.5,380.5,408.6,429.2,434.0,438.0],
+    human: [0.8,5.2,10.7,20.5,23.2,36.4,52.3],
+    ivrSimple: [0.7,3.8,12.2,14.7],
+    ivrHard: [1.0,4.1,16.9,27.3,37.9,44.5,98.0],
+    bot: [4.6,9.3,25.2,33.2,41.9,48.0,56.9,66.6,70.5,84.9,92.7,102.8,113.7],
+    gauntlet: [0.9,4.1,6.2,19.3,25.1,28.6,36.9,40.5,49.5,57.6,63.9,71.2,80.9,87.7,92.7,97.4,104.5,112.6,121.9,124.7,134.2,148.5,155.9,163.8,173.2,180.3,188.5]
+  };
+
+  /* build each scenario transcript + wire approximate karaoke sync */
+  document.querySelectorAll('.scn-transcript').forEach(box=>{
+    const key = box.dataset.for;
+    const data = SCN[key]; if(!data) return;
+    const els = data.map(([who,label,txt])=>{
+      const d=document.createElement('div'); d.className='line';
+      const w=document.createElement('span'); w.className='who '+who; w.textContent=label;
+      d.appendChild(w); d.appendChild(document.createTextNode(txt));
+      box.appendChild(d); return d;
+    });
+    const times = TIMES[key];
+    let starts=null;
+    if(!times){ const weights=data.map(r=>r[2].length); const total=weights.reduce((a,b)=>a+b,0); starts=[]; let acc=0; weights.forEach(w=>{ starts.push(acc/total); acc+=w; }); }
+    const audio = document.querySelector('.scn-audio[data-for="'+key+'"]');
+    if(!audio) return;
+    audio._starts = starts; audio._times = times;
+    audio.addEventListener('timeupdate',()=>{
+      let idx=0;
+      if(times){ for(let k=0;k<times.length;k++){ if(audio.currentTime>=times[k]) idx=k; } }
+      else { if(!audio.duration) return; const f=audio.currentTime/audio.duration; for(let k=0;k<starts.length;k++){ if(f>=starts[k]) idx=k; } }
+      els.forEach((el,k)=>el.classList.toggle('active',k===idx));
+      const el=els[idx]; if(el){ box.scrollTo({top: el.offsetTop - box.clientHeight/2 + el.clientHeight/2, behavior:'smooth'}); }
+    });
+    audio.addEventListener('ended',()=>els.forEach(el=>el.classList.remove('active')));
+  });
+
+  /* chapter buttons: fast-forward the audio to a point in the conversation */
+  document.querySelectorAll('.chapter').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const key=btn.dataset.for, idx=parseInt(btn.dataset.line,10);
+      const audio=document.querySelector('.scn-audio[data-for="'+key+'"]');
+      const box=document.querySelector('.scn-transcript[data-for="'+key+'"]');
+      if(box){ const lines=box.querySelectorAll('.line'); lines.forEach((el,k)=>el.classList.toggle('active',k===idx)); const el=lines[idx]; if(el) box.scrollTo({top: el.offsetTop - box.clientHeight/2 + el.clientHeight/2, behavior:'smooth'}); }
+      if(!audio) return;
+      const t=(audio._times && audio._times[idx]!=null) ? audio._times[idx] : ((audio._starts&&audio._starts[idx]!=null?audio._starts[idx]:0)*(audio.duration||0));
+      const apply=()=>{ try{audio.currentTime=t;}catch(_){}; audio.play(); };
+      if(audio.readyState>=1){ apply(); }
+      else { audio.addEventListener('loadedmetadata',function h(){ audio.removeEventListener('loadedmetadata',h); apply(); }); try{audio.load();}catch(_){} }
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

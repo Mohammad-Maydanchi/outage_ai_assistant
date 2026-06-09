@@ -1,0 +1,27 @@
+# Secrets — never upload these
+.env
+*.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+dist/
+
+# Database file
+*.db
+
+# macOS
+.DS_Store
+
+# Generated demo artifacts (regenerable; audio is also embedded in the .pptx)
+docs/gauntlet-recording.wav
+docs/audio-poster.png
+
+# Large demo originals / bundles (not needed in the repo)
+docs/app-run-original.mov
+docs/vivant-demo.zip

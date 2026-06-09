@@ -1,0 +1,27 @@
+AI: Hi. I'm calling about a business Internet outage.
+User: Hello?
+AI: Hi there. This is John Doe calling on behalf of Vivante Corp. I'm checking on an Internet outage for our location at two seven two seven Linden, Dallas seven five two three four. Could you help me with that?
+User: I'm sorry. Which service are you calling about? Internet, TV, or phone.
+AI: I'm calling about the Internet service.
+User: Thank you for confirming that. Is this a personal or a business
+AI: This is a business account.
+User: Got it. You might wanna check for outages online. Can I send you a text with the link?
+AI: I appreciate the offer, but I would prefer to check on the outage directly with you. Could you help me with that?
+User: Are you sure? it's the fastest way. Can I text you the link?
+AI: Thank you. But I would really like to speak with a representative about the outage. Could you assist me with that?
+User: Sure. I can help you with that. First, I need to verify a few details before I can provide any outage information. Can I get the account number on the account?
+AI: Yes. The account number is one two three four five six seven eight nine zero.
+User: Thank you. And the security PIN or the phone number on the account.
+AI: The pin is four three two one.
+User: Thank you. Can you confirm the service address, please,
+AI: The service address is two seven two seven Linden, Dallas seven five two three four.
+User: Thank you for that information. All our representatives are currently helping other customers. You can keep holding, or we can call you back. Would you like to hold?
+AI: I'll hold. Thank you.
+User: Thank you for your patience. Please hold for a moment while I connect you to a representative. connecting. Hi. This is technical support. How can I help you today?
+AI: Hi. This is John Doe calling on behalf of VivantCorp. I'm checking on an Internet outage at our location at two seven two seven Linden, Dallas seven five two three four. Can you provide me with the status of the outage?
+User: Hi, John. Yes. There is currently an Internet outage in your area. Is there anything else you'd like to know about it?
+AI: Yes. Could you please tell me the reason for the outage and the estimated time for service restoration?
+User: The cause of the outage is a damaged fiber line. The estimated restoration time is eight PM today. Would you like any further assistance?
+AI: Thank you for the information. Could you provide me with a reference or ticket number for this outage?
+User: Certainly. The reference ticket number is five five four three two. Is there anything else I can assist you with today?
+AI: No. That will be all. Thanks. That's all I needed. Goodbye.

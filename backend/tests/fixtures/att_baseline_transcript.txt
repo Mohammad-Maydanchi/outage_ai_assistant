@@ -1,0 +1,30 @@
+AT&T System: Hello. Welcome to AT&T. Calls are recorded for quality and the purposes stated in our privacy notice. Thank you.
+Caller: English please.
+AT&T System: Sorry.
+Caller: No problem. Thank you.
+AT&T System: No worries. Now, how may I help you today?
+Caller: Hi, this is Hmed Mazerwe with Vivant Corp. Our AT&T internet service is completely down at our 2727 Lynon.
+AT&T System: Which are you calling about?
+Caller: I'm calling about our AT&T internet service. I need to report an outage.
+AT&T System: Which are you calling?
+Caller: I'm calling about an internet outage.
+AT&T System: Sorry.
+Caller: No problem. To clarify, I'm calling about an internet service outage at our The zip code is 75234.
+AT&T System: Thank you. One second, please. Which are you calling about, a personal or business account?
+Caller: I'm calling about a business account.
+AT&T System: Okay, hold on a minute.
+Caller: Absolutely. I'll wait while you look into it.
+AT&T System: You can check for outages by entering your zip code or signing in to see if there are any service outages for your specific address or account. You can also manage your internet service by checking for outages online. Can I send you a text with more information?
+Caller: I appreciate that. Um, however, I need a direct update from from your team.
+AT&T System: Sorry, I missed that. Can I send you a text with more information?
+Caller: No, thank you. I'd prefer to get the outage status and estimated restoration time directly from you over the phone. Could you please check if there's a known outage affecting our business? at 272.
+AT&T System: No problem at all. Please continue.
+AT&T System: Sure. You can check for outages by entering your zip code or signing in to see if there are any service outages for your specific address or account. You can also manage your internet service by checking for outages online. Can I send you a text with more information?
+Caller: Thank you, but I do need to speak directly to a technical support representative. Uh for a business.
+AT&T System: Let me find someone to help you.
+Caller: Thank you. I'll hold while you connect me to technical support.
+AT&T System: All of our representatives are assisting other callers. Rather than have you wait on hold, we can call you back when it's your turn. Between 4 minutes and 6 minutes from now, you will not lose your place in line if you choose to use this service. With a call back, you also receive the benefit of text message updates. To receive a call back as soon as possible, press one. To decline and hold for a representative, press three. To schedule a call back for a later time, press four. I have your phone number as 4 6 9 2 5 7 8 0 77. If that's right, press one. To re-enter your number, press two.
+AT&T System: Please say your full name at the tone. Then press any key to stop recording.
+Caller: Hmed me.
+AT&T System: You'll receive a call back between 4 minutes and 6 minutes from now. Thank you for calling. Goodbye.
+Caller: Goodbye.

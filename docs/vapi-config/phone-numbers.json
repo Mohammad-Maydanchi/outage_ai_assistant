@@ -1,0 +1,23 @@
+[
+  {
+    "number": "+13074051286",
+    "provider": "twilio",
+    "id": "ae048ada-1c2f-42ac-9fab-38a2b26584ec",
+    "name": "Outbound \u2014 Agent (Twilio)",
+    "assistantId": null
+  },
+  {
+    "number": "+19843023393",
+    "provider": "vapi",
+    "id": "3f9baf3b-858b-49b1-8765-9fb88a80cc14",
+    "name": null,
+    "assistantId": "f7f9ad55-7a66-43b9-a2e8-17ece4f3c404"
+  },
+  {
+    "number": "+15185518084",
+    "provider": "vapi",
+    "id": "c6a4fcff-2f74-4ec8-94a4-10f03a46b80c",
+    "name": null,
+    "assistantId": null
+  }
+]
